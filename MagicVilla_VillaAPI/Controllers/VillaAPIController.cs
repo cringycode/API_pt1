@@ -9,13 +9,23 @@ namespace MagicVilla_VillaAPI.Controllers;
 [ApiController]
 public class VillaAPIController : ControllerBase
 {
+    #region GET ALL
+
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<IEnumerable<VillaDTO>> GetVillas()
     {
         return Ok(VillaStore.villaList);
     }
 
+    #endregion
+
+    #region GET
+
     [HttpGet("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
     public ActionResult<VillaDTO> GetVilla(int id)
     {
         if (id == 0)
@@ -31,4 +41,33 @@ public class VillaAPIController : ControllerBase
 
         return Ok(villa);
     }
-} 
+
+    #endregion
+
+    #region CREATE
+
+    [HttpPost]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public ActionResult<VillaDTO> CreateVilla([FromBody] VillaDTO villaDTO)
+    {
+        if (villaDTO is null)
+        {
+            return BadRequest();
+        }
+
+        if (villaDTO.Id > 0)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
+
+        villaDTO.Id = VillaStore.villaList
+            .OrderByDescending(u => u.Id).FirstOrDefault().Id + 1;
+        VillaStore.villaList.Add(villaDTO);
+
+        return Ok(villaDTO);
+    }
+
+    #endregion
+}
