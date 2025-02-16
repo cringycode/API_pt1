@@ -22,8 +22,8 @@ public class VillaAPIController : ControllerBase
 
     #region GET
 
-    [HttpGet("{id:int}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [HttpGet("{id:int}", Name = "GetVilla")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
     public ActionResult<VillaDTO> GetVilla(int id)
@@ -66,7 +66,7 @@ public class VillaAPIController : ControllerBase
             .OrderByDescending(u => u.Id).FirstOrDefault().Id + 1;
         VillaStore.villaList.Add(villaDTO);
 
-        return Ok(villaDTO);
+        return CreatedAtRoute("GetVilla", new { id = villaDTO.Id }, villaDTO);
     }
 
     #endregion
