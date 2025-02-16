@@ -52,6 +52,11 @@ public class VillaAPIController : ControllerBase
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public ActionResult<VillaDTO> CreateVilla([FromBody] VillaDTO villaDTO)
     {
+        // if (!ModelState.IsValid)
+        // {
+        //     return BadRequest(ModelState);
+        // }
+        
         if (villaDTO is null)
         {
             return BadRequest();
@@ -68,6 +73,6 @@ public class VillaAPIController : ControllerBase
 
         return CreatedAtRoute("GetVilla", new { id = villaDTO.Id }, villaDTO);
     }
-
+ 
     #endregion
 }
