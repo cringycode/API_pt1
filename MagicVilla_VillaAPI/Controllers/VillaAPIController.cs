@@ -10,6 +10,17 @@ namespace MagicVilla_VillaAPI.Controllers;
 [ApiController]
 public class VillaAPIController : ControllerBase
 {
+    #region DI
+
+    private readonly ILogger<VillaAPIController> _logger;
+
+    public VillaAPIController(ILogger<VillaAPIController> logger)
+    {
+        _logger = logger;
+    }
+
+    #endregion
+
     #region GET ALL
 
     [HttpGet]
@@ -152,4 +163,4 @@ public class VillaAPIController : ControllerBase
     }
 
     #endregion
-} 
+}
