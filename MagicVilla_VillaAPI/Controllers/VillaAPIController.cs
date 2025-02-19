@@ -12,11 +12,9 @@ public class VillaAPIController : ControllerBase
 {
     #region DI
 
-    private readonly ILogger<VillaAPIController> _logger;
 
-    public VillaAPIController(ILogger<VillaAPIController> logger)
+    public VillaAPIController()
     {
-        _logger = logger;
     }
 
     #endregion
