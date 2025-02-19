@@ -12,9 +12,11 @@ public class VillaAPIController : ControllerBase
 {
     #region DI
 
+    private readonly ApplicationDbContext _db;
 
-    public VillaAPIController()
+    public VillaAPIController(ApplicationDbContext db)
     {
+        _db = db;
     }
 
     #endregion
@@ -25,7 +27,7 @@ public class VillaAPIController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public ActionResult<IEnumerable<VillaDTO>> GetVillas()
     {
-        return Ok(VillaStore.villaList);
+        return Ok(_db.Villas.ToList());
     }
 
     #endregion
@@ -43,7 +45,7 @@ public class VillaAPIController : ControllerBase
             return BadRequest();
         }
 
-        var villa = VillaStore.villaList.FirstOrDefault(u => u.Id == id);
+        var villa = _db.Villas.FirstOrDefault(u => u.Id == id);
         if (villa is null)
         {
             return NotFound();
@@ -77,10 +79,19 @@ public class VillaAPIController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError);
         }
 
-        villaDTO.Id = VillaStore.villaList
-            .OrderByDescending(u => u.Id).FirstOrDefault().Id + 1;
-        VillaStore.villaList.Add(villaDTO);
-
+        Villa model = new()
+        {
+            Amenity = villaDTO.Amenity,
+            Details = villaDTO.Details,
+            Id = villaDTO.Id,
+            ImageUrl = villaDTO.ImageUrl,
+            Name = villaDTO.Name,
+            Occupancy = villaDTO.Occupancy,
+            Rate = villaDTO.Rate,
+            Sqft = villaDTO.Sqft
+        };
+        _db.Villas.Add(model);
+        _db.SaveChanges();
         return CreatedAtRoute("GetVilla", new { id = villaDTO.Id }, villaDTO);
     }
 
@@ -99,13 +110,14 @@ public class VillaAPIController : ControllerBase
             return BadRequest();
         }
 
-        var villa = VillaStore.villaList.FirstOrDefault(u => u.Id == id);
+        var villa = _db.Villas.FirstOrDefault(u => u.Id == id);
         if (villa is null)
         {
             return NotFound();
         }
 
-        VillaStore.villaList.Remove(villa);
+        _db.Villas.Remove(villa);
+        _db.SaveChanges();
         return NoContent();
     }
 
@@ -123,11 +135,19 @@ public class VillaAPIController : ControllerBase
             return BadRequest();
         }
 
-        var villa = VillaStore.villaList.FirstOrDefault(u => u.Id == id);
-        villa.Name = villaDTO.Name;
-        villa.Sqft = villaDTO.Sqft;
-        villa.Occupancy = villaDTO.Occupancy;
-
+        Villa model = new()
+        {
+            Amenity = villaDTO.Amenity,
+            Details = villaDTO.Details,
+            Id = villaDTO.Id,
+            ImageUrl = villaDTO.ImageUrl,
+            Name = villaDTO.Name,
+            Occupancy = villaDTO.Occupancy,
+            Rate = villaDTO.Rate,
+            Sqft = villaDTO.Sqft
+        };
+        _db.Villas.Update(model);
+        _db.SaveChanges();
         return NoContent();
     }
 
@@ -145,13 +165,41 @@ public class VillaAPIController : ControllerBase
             return BadRequest();
         }
 
-        var villa = VillaStore.villaList.FirstOrDefault(u => u.Id == id);
+        var villa = _db.Villas.FirstOrDefault(u => u.Id == id);
+
+        VillaDTO villaDTO = new()
+        {
+            Amenity = villa.Amenity,
+            Details = villa.Details,
+            Id = villa.Id,
+            ImageUrl = villa.ImageUrl,
+            Name = villa.Name,
+            Occupancy = villa.Occupancy,
+            Rate = villa.Rate,
+            Sqft = villa.Sqft
+        };
+
+
         if (villa is null)
         {
             return BadRequest();
         }
 
-        patchDTO.ApplyTo(villa, ModelState);
+        patchDTO.ApplyTo(villaDTO, ModelState);
+        Villa model = new Villa()
+        {
+            Amenity = villaDTO.Amenity,
+            Details = villaDTO.Details,
+            Id = villaDTO.Id,
+            ImageUrl = villaDTO.ImageUrl,
+            Name = villaDTO.Name,
+            Occupancy = villaDTO.Occupancy,
+            Rate = villaDTO.Rate,
+            Sqft = villaDTO.Sqft
+        };
+        _db.Villas.Update(model);
+        _db.SaveChanges();
+
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
@@ -161,4 +209,4 @@ public class VillaAPIController : ControllerBase
     }
 
     #endregion
-}
+} 
