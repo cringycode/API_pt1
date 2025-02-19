@@ -26,9 +26,9 @@ public class VillaAPIController : ControllerBase
 
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public ActionResult<IEnumerable<VillaDTO>> GetVillas()
+    public async Task<ActionResult<IEnumerable<VillaDTO>>> GetVillas()
     {
-        return Ok(_db.Villas.ToList());
+        return Ok(await _db.Villas.ToListAsync());
     }
 
     #endregion
@@ -39,14 +39,14 @@ public class VillaAPIController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
-    public ActionResult<VillaDTO> GetVilla(int id)
+    public async Task<ActionResult<VillaDTO>> GetVilla(int id)
     {
         if (id == 0)
         {
             return BadRequest();
         }
 
-        var villa = _db.Villas.FirstOrDefault(u => u.Id == id);
+        var villa = await _db.Villas.FirstOrDefaultAsync(u => u.Id == id);
         if (villa is null)
         {
             return NotFound();
@@ -63,22 +63,12 @@ public class VillaAPIController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public ActionResult<VillaDTO> CreateVilla([FromBody] VillaCreateDTO villaDTO)
+    public async Task<ActionResult<VillaDTO>> CreateVilla([FromBody] VillaCreateDTO villaDTO)
     {
-        // if (!ModelState.IsValid)
-        // {
-        //     return BadRequest(ModelState);
-        // }
-
         if (villaDTO is null)
         {
             return BadRequest();
         }
-
-        // if (villaDTO.Id > 0)
-        // {
-        //     return StatusCode(StatusCodes.Status500InternalServerError);
-        // }
 
         Villa model = new()
         {
@@ -90,8 +80,8 @@ public class VillaAPIController : ControllerBase
             Rate = villaDTO.Rate,
             Sqft = villaDTO.Sqft
         };
-        _db.Villas.Add(model);
-        _db.SaveChanges();
+        await _db.Villas.AddAsync(model);
+        await _db.SaveChangesAsync();
         return CreatedAtRoute("GetVilla", new { id = model.Id }, model);
     }
 
@@ -103,21 +93,21 @@ public class VillaAPIController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public IActionResult DeleteVilla(int id)
+    public async Task<IActionResult> DeleteVilla(int id)
     {
         if (id == 0)
         {
             return BadRequest();
         }
 
-        var villa = _db.Villas.FirstOrDefault(u => u.Id == id);
+        var villa = await _db.Villas.FirstOrDefaultAsync(u => u.Id == id);
         if (villa is null)
         {
             return NotFound();
         }
 
         _db.Villas.Remove(villa);
-        _db.SaveChanges();
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 
@@ -128,7 +118,7 @@ public class VillaAPIController : ControllerBase
     [HttpPut("{id:int}", Name = "UpdateVilla")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public IActionResult UpdateVilla(int id, [FromBody] VillaUpdateDTO villaDTO)
+    public async Task<IActionResult> UpdateVilla(int id, [FromBody] VillaUpdateDTO villaDTO)
     {
         if (villaDTO == null || id != villaDTO.Id)
         {
@@ -147,7 +137,7 @@ public class VillaAPIController : ControllerBase
             Sqft = villaDTO.Sqft
         };
         _db.Villas.Update(model);
-        _db.SaveChanges();
+        await _db.SaveChangesAsync();
         return NoContent();
     }
 
@@ -158,14 +148,14 @@ public class VillaAPIController : ControllerBase
     [HttpPatch("{id:int}", Name = "UpdatePartialVilla")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public IActionResult UpdatePartialVilla(int id, JsonPatchDocument<VillaUpdateDTO> patchDTO)
+    public async Task<IActionResult> UpdatePartialVilla(int id, JsonPatchDocument<VillaUpdateDTO> patchDTO)
     {
         if (patchDTO == null || id == 0)
         {
             return BadRequest();
         }
 
-        var villa = _db.Villas.AsNoTracking().FirstOrDefault(u => u.Id == id);
+        var villa = await _db.Villas.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
 
         VillaUpdateDTO villaDTO = new()
         {
@@ -198,7 +188,7 @@ public class VillaAPIController : ControllerBase
             Sqft = villaDTO.Sqft
         };
         _db.Villas.Update(model);
-        _db.SaveChanges();
+        await _db.SaveChangesAsync();
 
         if (!ModelState.IsValid)
         {
