@@ -19,16 +19,19 @@ public class VillaNumberAPIController : ControllerBase
 
     protected APIResponse _response;
     private readonly IVillaNumberRepo _dbVillaNumber;
+    private readonly IVillaRepo _dbVilla;
     private readonly IMapper _mapper;
-
-    public VillaNumberAPIController(IVillaNumberRepo dbVillaNumber, IMapper mapper)
+    public VillaNumberAPIController(IVillaNumberRepo dbVillaNumber, IMapper mapper,
+        IVillaRepo dbVilla)
     {
         _dbVillaNumber = dbVillaNumber;
         _mapper = mapper;
         this._response = new();
+        _dbVilla = dbVilla;
     }
 
     #endregion
+
 
     #region GET ALL
 
@@ -38,18 +41,21 @@ public class VillaNumberAPIController : ControllerBase
     {
         try
         {
-            IEnumerable<VillaNumber> VillaNumberList = await _dbVillaNumber.GetAllAsync();
-            _response.Result = _mapper.Map<List<VillaNumberDTO>>(VillaNumberList);
+
+            IEnumerable<VillaNumber> villaNumberList = await _dbVillaNumber.GetAllAsync();
+            _response.Result = _mapper.Map<List<VillaNumberDTO>>(villaNumberList);
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
+
         }
         catch (Exception ex)
         {
             _response.IsSucces = false;
-            _response.ErrorMessages = new List<string>() { ex.ToString() };
+            _response.ErrorMessages
+                = new List<string>() { ex.ToString() };
         }
-
         return _response;
+
     }
 
     #endregion
@@ -57,9 +63,9 @@ public class VillaNumberAPIController : ControllerBase
     #region GET
 
     [HttpGet("{id:int}", Name = "GetVillaNumber")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(statusCode: StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<APIResponse>> GetVillaNumber(int id)
     {
         try
@@ -69,14 +75,12 @@ public class VillaNumberAPIController : ControllerBase
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 return BadRequest(_response);
             }
-
             var villaNumber = await _dbVillaNumber.GetAsync(u => u.VillaNo == id);
-            if (villaNumber is null)
+            if (villaNumber == null)
             {
                 _response.StatusCode = HttpStatusCode.NotFound;
                 return NotFound(_response);
             }
-
             _response.Result = _mapper.Map<VillaNumberDTO>(villaNumber);
             _response.StatusCode = HttpStatusCode.OK;
             return Ok(_response);
@@ -84,9 +88,9 @@ public class VillaNumberAPIController : ControllerBase
         catch (Exception ex)
         {
             _response.IsSucces = false;
-            _response.ErrorMessages = new List<string>() { ex.ToString() };
+            _response.ErrorMessages
+                = new List<string>() { ex.ToString() };
         }
-
         return _response;
     }
 
@@ -95,24 +99,36 @@ public class VillaNumberAPIController : ControllerBase
     #region CREATE
 
     [HttpPost]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<APIResponse>> CreateVillaNumber([FromBody] VillaNumberCreateDTO createDTO)
     {
         try
         {
-            if (createDTO is null)
+                
+            if (await _dbVillaNumber.GetAsync(u => u.VillaNo == createDTO.VillaNo) != null)
+            {
+                ModelState.AddModelError("CustomError", "Villa Number already Exists!");
+                return BadRequest(ModelState);
+            }
+            if (await _dbVilla.GetAsync(u => u.Id == createDTO.VillaID) == null)
+            {
+                ModelState.AddModelError("CustomError", "Villa ID is Invalid!");
+                return BadRequest(ModelState);
+            }
+            if (createDTO == null)
             {
                 return BadRequest(createDTO);
             }
-
+               
             VillaNumber villaNumber = _mapper.Map<VillaNumber>(createDTO);
 
+               
             await _dbVillaNumber.CreateAsync(villaNumber);
             _response.Result = _mapper.Map<VillaNumberDTO>(villaNumber);
             _response.StatusCode = HttpStatusCode.Created;
-            return CreatedAtRoute("GetVillaNumber", new { id = villaNumber.VillaNo }, _response);
+            return CreatedAtRoute("GetVilla", new { id = villaNumber.VillaNo }, _response);
         }
         catch (Exception ex)
         {
@@ -120,7 +136,6 @@ public class VillaNumberAPIController : ControllerBase
             _response.ErrorMessages
                 = new List<string>() { ex.ToString() };
         }
-
         return _response;
     }
 
@@ -128,10 +143,10 @@ public class VillaNumberAPIController : ControllerBase
 
     #region DELETE
 
-    [HttpDelete("{id:int}", Name = "DeleteVillaNumber")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [HttpDelete("{id:int}", Name = "DeleteVillaNumber")]
     public async Task<ActionResult<APIResponse>> DeleteVillaNumber(int id)
     {
         try
@@ -140,13 +155,11 @@ public class VillaNumberAPIController : ControllerBase
             {
                 return BadRequest();
             }
-
             var villaNumber = await _dbVillaNumber.GetAsync(u => u.VillaNo == id);
-            if (villaNumber is null)
+            if (villaNumber == null)
             {
                 return NotFound();
             }
-
             await _dbVillaNumber.RemoveAsync(villaNumber);
             _response.StatusCode = HttpStatusCode.NoContent;
             _response.IsSucces = true;
@@ -155,9 +168,9 @@ public class VillaNumberAPIController : ControllerBase
         catch (Exception ex)
         {
             _response.IsSucces = false;
-            _response.ErrorMessages = new List<string>() { ex.ToString() };
+            _response.ErrorMessages
+                = new List<string>() { ex.ToString() };
         }
-
         return _response;
     }
 
@@ -176,8 +189,13 @@ public class VillaNumberAPIController : ControllerBase
             {
                 return BadRequest();
             }
-
+            if (await _dbVilla.GetAsync(u => u.Id == updateDTO.VillaID) == null)
+            {
+                ModelState.AddModelError("CustomError", "Villa ID is Invalid!");
+                return BadRequest(ModelState);
+            }
             VillaNumber model = _mapper.Map<VillaNumber>(updateDTO);
+
             await _dbVillaNumber.UpdateAsync(model);
             _response.StatusCode = HttpStatusCode.NoContent;
             _response.IsSucces = true;
@@ -186,11 +204,12 @@ public class VillaNumberAPIController : ControllerBase
         catch (Exception ex)
         {
             _response.IsSucces = false;
-            _response.ErrorMessages = new List<string>() { ex.ToString() };
+            _response.ErrorMessages
+                = new List<string>() { ex.ToString() };
         }
-
         return _response;
     }
 
     #endregion
+
 }
