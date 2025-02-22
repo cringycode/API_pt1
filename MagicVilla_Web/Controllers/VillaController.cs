@@ -1,4 +1,5 @@
-﻿using AutoMapper;
+﻿using System.Diagnostics.CodeAnalysis;
+using AutoMapper;
 using MagicVilla_Web.Models;
 using MagicVilla_Web.Models.Dto;
 using MagicVilla_Web.Services.IServices;
@@ -22,6 +23,9 @@ public class VillaController : Controller
 
     #endregion
 
+    #region INDEX
+
+    [SuppressMessage("ReSharper.DPA", "DPA0011: High execution time of MVC action", MessageId = "time: 2468ms")]
     public async Task<IActionResult> IndexVilla()
     {
         List<VillaDTO> list = new();
@@ -33,5 +37,28 @@ public class VillaController : Controller
         }
 
         return View(list);
+    }
+
+    #endregion
+
+    public async Task<IActionResult> CreateVilla()
+    {
+        return View();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateVilla(VillaCreateDTO model)
+    {
+        if (ModelState.IsValid)
+        {
+            var response = await _villaService.CreateAsync<APIResponse>(model);
+            if (response != null && response.IsSucces)
+            {
+                return RedirectToAction(nameof(IndexVilla));
+            }
+        }
+
+        return View(model);
     }
 }
