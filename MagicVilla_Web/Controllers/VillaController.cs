@@ -41,6 +41,8 @@ public class VillaController : Controller
 
     #endregion
 
+    #region CREATE
+
     public async Task<IActionResult> CreateVilla()
     {
         return View();
@@ -53,6 +55,36 @@ public class VillaController : Controller
         if (ModelState.IsValid)
         {
             var response = await _villaService.CreateAsync<APIResponse>(model);
+            if (response != null && response.IsSucces)
+            {
+                return RedirectToAction(nameof(IndexVilla));
+            }
+        }
+
+        return View(model);
+    }
+
+    #endregion
+
+    public async Task<IActionResult> UpdateVilla(int VillaId)
+    {
+        var response = await _villaService.GetAsync<APIResponse>(VillaId);
+        if (response != null && response.IsSucces)
+        {
+            VillaDTO model = JsonConvert.DeserializeObject<VillaDTO>(Convert.ToString(response.Result));
+            return View(_mapper.Map<VillaUpdateDTO>(model));
+        }
+
+        return NotFound();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateVilla(VillaUpdateDTO model)
+    {
+        if (ModelState.IsValid)
+        {
+            var response = await _villaService.UpdateAsync<APIResponse>(model);
             if (response != null && response.IsSucces)
             {
                 return RedirectToAction(nameof(IndexVilla));
