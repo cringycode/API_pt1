@@ -66,6 +66,8 @@ public class VillaController : Controller
 
     #endregion
 
+    #region UPDATE
+
     public async Task<IActionResult> UpdateVilla(int VillaId)
     {
         var response = await _villaService.GetAsync<APIResponse>(VillaId);
@@ -93,4 +95,36 @@ public class VillaController : Controller
 
         return View(model);
     }
-}
+
+    #endregion
+
+    #region DELETE
+
+    public async Task<IActionResult> DeleteVilla(int VillaId)
+    {
+        var response = await _villaService.GetAsync<APIResponse>(VillaId);
+        if (response != null && response.IsSucces)
+        {
+            VillaDTO model = JsonConvert.DeserializeObject<VillaDTO>(Convert.ToString(response.Result));
+            return View(model);
+        }
+
+
+        return NotFound();
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteVilla(VillaDTO model)
+    {
+        var response = await _villaService.DeleteAsync<APIResponse>(model.Id);
+        if (response != null && response.IsSucces)
+        {
+            return RedirectToAction(nameof(IndexVilla));
+        }
+
+        return View(model);
+    }
+
+    #endregion
+}   
