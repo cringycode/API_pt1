@@ -10,10 +10,12 @@ public class UserRepo : IUserRepo
     #region DI
 
     private readonly ApplicationDbContext _db;
+    private string secretKey;
 
-    public UserRepo(ApplicationDbContext db)
+    public UserRepo(ApplicationDbContext db, IConfiguration configuration)
     {
         _db = db;
+        secretKey = configuration.GetValue<string>("ApiSettings:Secret");
     }
 
     #endregion
@@ -33,10 +35,23 @@ public class UserRepo : IUserRepo
 
     #endregion
 
+    #region LOGIN
+
     public Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
     {
-        throw new NotImplementedException();
+        var user = _db.LocalUsers.FirstOrDefault
+        (u => u.UserName.ToLower() == loginRequestDTO.UserName.ToLower() &&
+              u.Password == loginRequestDTO.Password);
+
+        if (user is null)
+        {
+            return null;
+        }
     }
+
+    #endregion
+
+    #region REGISTER
 
     public async Task<LocalUser> Register(RegisterationRequestDTO registerationRequestDTO)
     {
@@ -52,4 +67,6 @@ public class UserRepo : IUserRepo
         user.Password = "";
         return user;
     }
+
+    #endregion
 }
