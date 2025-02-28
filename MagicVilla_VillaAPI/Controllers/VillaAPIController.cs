@@ -13,7 +13,6 @@ namespace MagicVilla_VillaAPI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize(Roles = "admin")]
 public class VillaAPIController : ControllerBase
 {
     #region DI
