@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json.Serialization;
 using MagicVilla_Utility;
 using MagicVilla_Web.Models;
@@ -53,6 +54,10 @@ public class BaseService : IBaseService
             }
 
             HttpResponseMessage apiResponse = null;
+            if (!string.IsNullOrEmpty(apiRequest.Token))
+            {
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiRequest.Token);
+            }
 
             apiResponse = await client.SendAsync(message);
 
@@ -75,6 +80,7 @@ public class BaseService : IBaseService
                 var exceptionResponse = JsonConvert.DeserializeObject<T>(apiContent);
                 return exceptionResponse;
             }
+
             var APIResponse = JsonConvert.DeserializeObject<T>(apiContent);
             return APIResponse;
         }
