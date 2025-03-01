@@ -5,6 +5,9 @@ using MagicVilla_Web.Services.IServices;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+#region SERVICES
+
 builder.Services.AddControllersWithViews();
 builder.Services.AddAutoMapper(typeof(MappingConfig));
 
@@ -13,6 +16,11 @@ builder.Services.AddScoped<IVillaService, VillaService>();
 
 builder.Services.AddHttpClient<IVillaNumberService, VillaNumberService>();
 builder.Services.AddScoped<IVillaNumberService, VillaNumberService>();
+
+builder.Services.AddHttpClient<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+#endregion
 
 var app = builder.Build();
 

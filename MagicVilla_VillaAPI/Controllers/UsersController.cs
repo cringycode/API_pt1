@@ -24,7 +24,7 @@ public class UsersController : Controller
 
     #endregion
 
-    [HttpPost("Login")]
+    [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDTO model)
     {
         var loginResponse = await _userRepo.Login(model);
