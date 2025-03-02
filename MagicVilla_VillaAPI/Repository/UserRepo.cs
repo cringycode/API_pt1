@@ -1,10 +1,12 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using AutoMapper;
 using MagicVilla_VillaAPI.Data;
 using MagicVilla_VillaAPI.Models;
 using MagicVilla_VillaAPI.Models.Dto;
 using MagicVilla_VillaAPI.Repository.IRepository;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 
 namespace MagicVilla_VillaAPI.Repository;
@@ -14,11 +16,16 @@ public class UserRepo : IUserRepo
     #region DI
 
     private readonly ApplicationDbContext _db;
+    private readonly UserManager<AppUser> _userManager;
+    private readonly IMapper _mapper;
     private string secretKey;
 
-    public UserRepo(ApplicationDbContext db, IConfiguration configuration)
+    public UserRepo(ApplicationDbContext db, IConfiguration configuration, UserManager<AppUser> userManager,
+        IMapper mapper)
     {
         _db = db;
+        _mapper = mapper;
+        _userManager = userManager;
         secretKey = configuration.GetValue<string>("ApiSettings:Secret");
     }
 
@@ -28,7 +35,7 @@ public class UserRepo : IUserRepo
 
     public bool IsUniqueUser(string username)
     {
-        var user = _db.LocalUsers.FirstOrDefault(u => u.UserName == username);
+        var user = _db.AppUsers.FirstOrDefault(u => u.UserName == username);
         if (user is null)
         {
             return true;
@@ -43,11 +50,12 @@ public class UserRepo : IUserRepo
 
     public async Task<LoginResponseDTO> Login(LoginRequestDTO loginRequestDTO)
     {
-        var user = _db.LocalUsers.FirstOrDefault
-        (u => u.UserName.ToLower() == loginRequestDTO.UserName.ToLower() &&
-              u.Password == loginRequestDTO.Password);
+        var user = _db.AppUsers.FirstOrDefault
+            (u => u.UserName.ToLower() == loginRequestDTO.UserName.ToLower());
 
-        if (user is null)
+        bool isValid = await _userManager.CheckPasswordAsync(user, loginRequestDTO.Password);
+
+        if (user is null || isValid is false)
         {
             return new LoginResponseDTO()
             {
@@ -58,6 +66,7 @@ public class UserRepo : IUserRepo
 
         // if user was found generate JWT Token 
 
+        var roles = await _userManager.GetRolesAsync(user);
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(secretKey);
 
@@ -66,7 +75,7 @@ public class UserRepo : IUserRepo
             Subject = new ClaimsIdentity(new Claim[]
             {
                 new Claim(ClaimTypes.Name, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role),
+                new Claim(ClaimTypes.Role, roles.FirstOrDefault()),
             }),
             Expires = DateTime.UtcNow.AddDays(7),
             SigningCredentials = new SigningCredentials
@@ -76,7 +85,8 @@ public class UserRepo : IUserRepo
         LoginResponseDTO loginResponseDTO = new LoginResponseDTO()
         {
             Token = tokenHandler.WriteToken(token),
-            User = user
+            User = _mapper.Map<UserDTO>(user),
+            Role = roles.FirstOrDefault()
         };
         return loginResponseDTO;
     }
